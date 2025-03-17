@@ -5,9 +5,7 @@ import java.util.List;
 
 public enum Roles implements GrantedAuthority {
     ADMIN,
-    MEMBER,
-    CHURCH,
-    SUPER_ADMIN;
+    CUSTOMER;
 
     @Override
     public String getAuthority() {

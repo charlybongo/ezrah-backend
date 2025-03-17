@@ -1,12 +1,13 @@
 package com.example.ezra.models.authModel;
 
 import com.example.ezra.enums.Roles;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
 import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 
 @Entity
@@ -21,19 +22,38 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @Column(nullable = false)
+    private String firstName;
+
+    @Column(nullable = false)
+    private String lastName;
+
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column(unique = true, nullable = false)
+    private String phone;
+
+    @Column(name = "postal_code")
+    private String postalCode;
+
+    @Column(name = "country")
+    private String country;
+
+    @Column(name = "house_no")
+    private String houseNo;
+
+    @Column(nullable = false) // ✅ Ensure password is not nullable
     private String password;
 
-    @Enumerated(EnumType.STRING)  // ✅ Stores ENUM as STRING instead of ENUM type
+    @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private Roles role;
 
     @Override
+    @JsonIgnore // ✅ Prevents serialization issues
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return role.getAuthorities();
+        return role != null ? role.getAuthorities() : Collections.emptyList();
     }
 
     @Override
