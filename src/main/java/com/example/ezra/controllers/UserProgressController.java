@@ -3,6 +3,8 @@ package com.example.ezra.controllers;
 import com.example.ezra.models.userProgress.UserProgress;
 import com.example.ezra.services.UserProgressService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

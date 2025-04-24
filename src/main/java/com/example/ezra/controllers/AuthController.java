@@ -39,10 +39,21 @@ public class AuthController {
         LoginResponse loginResponse = authService.login(email, password);
         return ResponseEntity.ok(loginResponse);
     }
+
     @PutMapping("/update/{userId}")
     @Operation(summary = "Update User Details", description = "Update user profile information")
     public ResponseEntity<String> updateUser(@PathVariable UUID userId, @RequestBody User updatedUser) {
         String responseMessage = authService.updateUserDetails(userId, updatedUser);
         return ResponseEntity.ok(responseMessage);
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "User Logout", description = "Invalidate the current user's JWT token")
+    public ResponseEntity<Map<String, String>> logout(@RequestHeader("Authorization") String authHeader) {
+        authService.logout(authHeader);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Logged out successfully");
+        return ResponseEntity.ok(response);
     }
 }

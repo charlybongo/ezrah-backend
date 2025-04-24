@@ -3,6 +3,7 @@ package com.example.ezra.services;
 import com.example.ezra.dtos.LoginResponse;
 import com.example.ezra.enums.Roles;
 import com.example.ezra.helpers.JwtUtil;
+import com.example.ezra.helpers.TokenBlacklist;
 import com.example.ezra.models.authModel.User;
 import com.example.ezra.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-
+    private final TokenBlacklist tokenBlacklist;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -33,17 +34,11 @@ public class AuthService {
                 .ifPresent(existingUser -> {
                     throw new IllegalStateException("Email already exists!");
                 });
-
-        // ✅ Hash password before saving
         String hashedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashedPassword);
-
-        // ✅ Assign default role
         user.setRole(Roles.CUSTOMER);
 
         userRepository.save(user);
-
-        // ✅ Return JSON response
         Map<String, String> response = new HashMap<>();
         response.put("message", "User registered successfully!");
 
@@ -102,5 +97,9 @@ public class AuthService {
 
         userRepository.save(existingUser);
         return "User details updated successfully!";
+    }
+    public void logout(String token) {
+        String jwtToken = token.substring(7);
+        tokenBlacklist.addToBlacklist(jwtToken);
     }
 }

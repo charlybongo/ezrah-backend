@@ -1,6 +1,7 @@
 package com.example.ezra.services;
 
 import com.example.ezra.helpers.JwtUtil;
+import com.example.ezra.helpers.PagedResponse;
 import com.example.ezra.models.authModel.User;
 import com.example.ezra.models.chapterModel.BibleContent;
 import com.example.ezra.repositories.BibleContentRepository;
@@ -8,6 +9,9 @@ import com.example.ezra.repositories.UserRepository;
 import com.example.ezra.repositories.UserSubscriptionRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,12 +33,9 @@ public class BibleContentService {
 
     public BibleContent saveContent(BibleContent content, Long parentId, String token) {
         String email = jwtUtil.extractUsername(token);
-
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
         jwtUtil.validateToken(token, user);
-
         if (parentId != null && parentId != 0) {
             Optional<BibleContent> parent = bibleContentRepository.findById(parentId);
             if (parent.isEmpty()) {
@@ -51,35 +52,37 @@ public class BibleContentService {
                 saveContent(child, savedContent.getId(), token);
             }
         }
-
         return savedContent;
     }
-
-    public List<BibleContent> getRootContent(String token) {
+    public PagedResponse<BibleContent> getRootContent(String token, Pageable pageable) {
         String email = jwtUtil.extractUsername(token);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        jwtUtil.validateToken(token,user);
-        return bibleContentRepository.findByParentId(null);
+        jwtUtil.validateToken(token, user);
+
+        Page<BibleContent> pageResult = bibleContentRepository.findByParentId(null, pageable);
+        return new PagedResponse<>(pageResult);
     }
-
-
-    public List<BibleContent> getAllChaptersWithSubContents(String token) {
+    public PagedResponse<BibleContent> getAllChaptersWithSubContents(String token, Pageable pageable) {
         String email = jwtUtil.extractUsername(token);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        jwtUtil.validateToken(token,user);
-        List<BibleContent> rootChapters = bibleContentRepository.findByParentId(null);
-        return rootChapters.stream()
-                .map(this::loadSubContents)
-                .collect(Collectors.toList());
+        jwtUtil.validateToken(token, user);
+
+        Page<BibleContent> rootChapters = bibleContentRepository.findByParentId(null, pageable);
+        List<BibleContent> contentList = rootChapters.stream()
+                .map(content -> loadSubContents(content, pageable))
+                .toList();
+        return new PagedResponse<>(rootChapters);
     }
 
-    private BibleContent loadSubContents(BibleContent content) {
-        List<BibleContent> children = bibleContentRepository.findByParentId(content.getId());
-        content.setChildren(children.stream().map(this::loadSubContents).collect(Collectors.toList()));
+    private BibleContent loadSubContents(BibleContent content, Pageable pageable) {
+        List<BibleContent> children = bibleContentRepository.findByParentId(content.getId(), pageable).getContent();
+        content.setChildren(children.stream()
+                .map(child -> loadSubContents(child, pageable))
+                .collect(Collectors.toList()));
         return content;
     }
 
@@ -89,8 +92,9 @@ public class BibleContentService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         jwtUtil.validateToken(token,user);
+        Pageable pageable = PageRequest.of(0, 10);
         Optional<BibleContent> content = bibleContentRepository.findById(id);
-        return content.map(this::loadSubContents);
+        return content.map(c -> loadSubContents(c, pageable));
     }
 
     public BibleContent updateContent(Long id, BibleContent updatedContent, String token) {
@@ -108,111 +112,97 @@ public class BibleContentService {
                 }).orElseThrow(() -> new RuntimeException("Content not found"));
     }
 
-    public void deleteContent(Long id, String token) {
+    public void deleteContent(Long id, String token, Pageable pageable) {
         String email = jwtUtil.extractEmail(token);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         jwtUtil.validateToken(token,user);
-        List<BibleContent> children = bibleContentRepository.findByParentId(id);
+        List<BibleContent> children =  bibleContentRepository.findByParentId(id,pageable).getContent();
         for (BibleContent child : children) {
-            deleteContent(child.getId(), token);
+            deleteContent(child.getId(), token, pageable);
         }
         bibleContentRepository.deleteById(id);
     }
 
-    public List<BibleContent> getRootContentByLanguage(String language, String token) {
+    public PagedResponse<BibleContent> getRootContentByLanguage(String language, String token, Pageable pageable) {
         String email = jwtUtil.extractUsername(token);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        jwtUtil.validateToken(token,user);
-        return bibleContentRepository.findByParentIdAndLanguage(null, language);
-    }
-
-    public List<BibleContent> getAllChaptersWithSubContentsByLanguage(String language, String token) {
-        String email = jwtUtil.extractUsername(token);
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        jwtUtil.validateToken(token,user);
-        List<BibleContent> rootChapters = bibleContentRepository.findByParentIdAndLanguage(null, language);
-        return rootChapters.stream()
-                .map(this::loadSubContents)
-                .collect(Collectors.toList());
-    }
-    public List<BibleContent> searchContent(String keyword, String token) {
-        String email = jwtUtil.extractUsername(token);
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
         jwtUtil.validateToken(token, user);
 
-        return bibleContentRepository.searchByContent(keyword);
+        Page<BibleContent> pageResult = bibleContentRepository.findByParentIdAndLanguage(null, language, pageable);
+        return new PagedResponse<>(pageResult);
     }
-    public List<BibleContent> searchContentByLanguage(String keyword, String language, String token) {
-        String email = jwtUtil.extractUsername(token);
 
+    public PagedResponse<BibleContent> getAllChaptersWithSubContentsByLanguage(String language, String token, Pageable pageable) {
+        String email = jwtUtil.extractUsername(token);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
         jwtUtil.validateToken(token, user);
-
-        return bibleContentRepository.searchByContentAndLanguage(keyword, language);
+        Page<BibleContent> rootChapters = bibleContentRepository.findByParentIdAndLanguage(null, language, pageable);
+        List<BibleContent> contentList = rootChapters.stream()
+                .map(content -> loadSubContents(content, pageable))
+                .toList();
+        return new PagedResponse<>(rootChapters);
+    }
+    public PagedResponse<BibleContent> searchContent(String keyword, String token, Pageable pageable) {
+        String email = jwtUtil.extractUsername(token);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        jwtUtil.validateToken(token, user);
+        Page<BibleContent> searchResult = bibleContentRepository.searchByContent(keyword, pageable);
+        return new PagedResponse<>(searchResult);
+    }
+    public PagedResponse<BibleContent> searchContentByLanguage(String keyword, String language, String token, Pageable pageable) {
+        String email = jwtUtil.extractUsername(token);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        jwtUtil.validateToken(token, user);
+        Page<BibleContent> searchResult = bibleContentRepository.searchByContentAndLanguage(keyword, language, pageable);
+        return new PagedResponse<>(searchResult);
     }
 
-    public Optional<BibleContent> getContentByIdAndLanguage(Long id, String language, String token) {
+    public Optional<BibleContent> getContentByIdAndLanguage(Long id, String language, String token, Pageable pageable) {
         String email = jwtUtil.extractEmail(token);
-
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         jwtUtil.validateToken(token,user);
         Optional<BibleContent> content = bibleContentRepository.findByIdAndLanguage(id, language);
-        return content.map(this::loadSubContents);
+        return content.map(c -> loadSubContents(c, pageable));
     }
-    public List<BibleContent> getUnsubscribedContentByLanguage(String language, String token) {
+    public PagedResponse<BibleContent> getUnsubscribedContentByLanguage(String language, String token, Pageable pageable) {
         String email = jwtUtil.extractUsername(token);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         jwtUtil.validateToken(token, user);
-
-        // ✅ Get all chapters the user is subscribed to
         List<Long> subscribedChapterIds = userSubscriptionRepository.findByUserId(user.getId())
                 .stream()
-                .map(subscription -> subscription.getChapter().getId()) // Extract chapter IDs
-                .toList();
-
-        // ✅ If user has no subscriptions, return all content for the language
+                .map(subscription -> subscription.getChapter().getId())
+                .collect(Collectors.toList());
+        Page<BibleContent> pageResult;
         if (subscribedChapterIds.isEmpty()) {
-            return bibleContentRepository.findByLanguage(language);
+            pageResult = bibleContentRepository.findByLanguage(language, pageable);
+        } else {
+            pageResult = bibleContentRepository.findUnsubscribedContentByLanguage(language, subscribedChapterIds, pageable);
         }
-
-        // ✅ Fetch content not in subscribed list
-        return bibleContentRepository.findUnsubscribedContentByLanguage(language, subscribedChapterIds);
+        return new PagedResponse<>(pageResult);
     }
 
     @Transactional
     public List<BibleContent> updateMultipleContents(List<BibleContent> updates, String token) {
         String email = jwtUtil.extractUsername(token);
-
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
         jwtUtil.validateToken(token, user);
-
-
         List<Long> ids = updates.stream().map(BibleContent::getId).toList();
-
-        // ✅ Find the existing content in the database
         List<BibleContent> existingContents = bibleContentRepository.findAllById(ids);
 
         if (existingContents.isEmpty()) {
             throw new RuntimeException("No valid content found for the provided IDs");
         }
-
-        // ✅ Update the fields for each content item
         for (BibleContent existing : existingContents) {
             for (BibleContent update : updates) {
                 if (existing.getId().equals(update.getId())) {
@@ -222,8 +212,6 @@ public class BibleContentService {
                 }
             }
         }
-
-        // ✅ Save all updates in bulk
         return bibleContentRepository.saveAll(existingContents);
     }
 

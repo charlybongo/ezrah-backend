@@ -1,10 +1,12 @@
 package com.example.ezra.controllers;
 
+import com.example.ezra.helpers.PagedResponse;
 import com.example.ezra.models.chapterModel.BibleContent;
 import com.example.ezra.services.BibleContentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +18,7 @@ public class BibleContentController {
 
     @Autowired
     private BibleContentService bibleContentService;
+
     private String extractToken(String bearerToken) {
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
@@ -33,7 +36,6 @@ public class BibleContentController {
     @PutMapping("/{id}")
     public ResponseEntity<BibleContent> updateContent(@RequestHeader("Authorization") String bearerToken, @PathVariable Long id, @RequestBody BibleContent updatedContent) {
         try {
-
             String token = extractToken(bearerToken);
             BibleContent updated = bibleContentService.updateContent(id, updatedContent, token);
             return ResponseEntity.ok(updated);
@@ -41,19 +43,20 @@ public class BibleContentController {
             return ResponseEntity.notFound().build();
         }
     }
+
     @PutMapping("/bulk-update")
-    public ResponseEntity<List<BibleContent>> updateMultipleContents(
-            @RequestBody List<BibleContent> updates,
-            @RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<List<BibleContent>> updateMultipleContents(@RequestBody List<BibleContent> updates, @RequestHeader("Authorization") String bearerToken) {
         String token = extractToken(bearerToken);
         List<BibleContent> updatedContents = bibleContentService.updateMultipleContents(updates, token);
         return ResponseEntity.ok(updatedContents);
     }
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteContent(@RequestHeader("Authorization") String bearerToken, @PathVariable Long id) {
+    public ResponseEntity<Void> deleteContent(@RequestHeader("Authorization") String bearerToken, @PathVariable Long id, @RequestParam int page, @RequestParam int size) {
         try {
             String token = extractToken(bearerToken);
-            bibleContentService.deleteContent(id, token);
+            Pageable pageable = PageRequest.of(page, size);
+            bibleContentService.deleteContent(id, token, pageable);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -61,18 +64,19 @@ public class BibleContentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<BibleContent>> getAllRootContent(@RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<PagedResponse<BibleContent>> getAllRootContent(@RequestHeader("Authorization") String bearerToken, @RequestParam int page, @RequestParam int size) {
         String token = extractToken(bearerToken);
-        List<BibleContent> contentList = bibleContentService.getRootContent(token);
+        Pageable pageable = PageRequest.of(page, size);
+        PagedResponse<BibleContent> contentList = bibleContentService.getRootContent(token, pageable);
         return ResponseEntity.ok(contentList);
     }
 
     @GetMapping("/chapters")
-    public ResponseEntity<List<BibleContent>> getChaptersWithSubContents(@RequestHeader("Authorization") String bearerToken) {
-
+    public ResponseEntity<PagedResponse<BibleContent>> getChaptersWithSubContents(@RequestHeader("Authorization") String bearerToken, @RequestParam int page, @RequestParam int size) {
+        Pageable pageable = PageRequest.of(page, size);
         String token = extractToken(bearerToken);
-        List<BibleContent> chapters = bibleContentService.getAllChaptersWithSubContents(token);
-        if (chapters.isEmpty()) {
+        PagedResponse<BibleContent> chapters = bibleContentService.getAllChaptersWithSubContents(token, pageable);
+        if (chapters.getContent().isEmpty()) {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(chapters);
@@ -86,53 +90,50 @@ public class BibleContentController {
     }
 
     @GetMapping("language/root")
-    public ResponseEntity<List<BibleContent>> getRootContentByLanguage(
-            @RequestParam String language,
-            @RequestHeader("Authorization") String bearerToken) {
-
+    public ResponseEntity<PagedResponse<BibleContent>> getRootContentByLanguage(@RequestParam String language, @RequestParam int page, @RequestParam int size, @RequestHeader("Authorization") String bearerToken) {
+        Pageable pageable = PageRequest.of(page, size);
         String token = extractToken(bearerToken);
-        return ResponseEntity.ok(bibleContentService.getRootContentByLanguage(language, token));
+        PagedResponse<BibleContent> content = bibleContentService.getRootContentByLanguage(language, token, pageable);
+        return ResponseEntity.ok(content);
     }
 
     @GetMapping("language/all")
-    public ResponseEntity<List<BibleContent>> getAllChaptersWithSubContentsByLanguage(
-            @RequestParam String language,
-            @RequestHeader("Authorization") String bearerToken) {
-
+    public ResponseEntity<PagedResponse<BibleContent>> getAllChaptersWithSubContentsByLanguage(@RequestParam String language, @RequestParam int page, @RequestParam int size, @RequestHeader("Authorization") String bearerToken) {
+        Pageable pageable = PageRequest.of(page, size);
         String token = extractToken(bearerToken);
-        return ResponseEntity.ok(bibleContentService.getAllChaptersWithSubContentsByLanguage(language, token));
+        PagedResponse<BibleContent> content = bibleContentService.getAllChaptersWithSubContentsByLanguage(language, token, pageable);
+        return ResponseEntity.ok(content);
     }
 
     @GetMapping("language/{id}")
-    public ResponseEntity<Optional<BibleContent>> getContentByIdAndLanguage(
-            @PathVariable Long id,
-            @RequestParam String language,
-            @RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<Optional<BibleContent>> getContentByIdAndLanguage(@PathVariable Long id, @RequestParam String language, @RequestParam int page, @RequestParam int size, @RequestHeader("Authorization") String bearerToken) {
+        Pageable pageable = PageRequest.of(page, size);
         String token = extractToken(bearerToken);
-        return ResponseEntity.ok(bibleContentService.getContentByIdAndLanguage(id, language, token));
+        Optional<BibleContent> content = bibleContentService.getContentByIdAndLanguage(id, language, token, pageable);
+        return ResponseEntity.ok(content);
     }
+
     @GetMapping("/search")
-    public List<BibleContent> searchContent(@RequestParam String keyword, @RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<PagedResponse<BibleContent>> searchContent(@RequestParam String keyword, @RequestHeader("Authorization") String bearerToken, @RequestParam int page, @RequestParam int size) {
+        Pageable pageable = PageRequest.of(page, size);
         String token = extractToken(bearerToken);
-        return bibleContentService.searchContent(keyword, token);
+        PagedResponse<BibleContent> searchResults = bibleContentService.searchContent(keyword, token, pageable);
+        return ResponseEntity.ok(searchResults);
     }
+
     @GetMapping("/searchByLanguage")
-    public List<BibleContent> searchContentByLanguage(
-            @RequestParam String keyword,
-            @RequestParam String language,
-            @RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<PagedResponse<BibleContent>> searchContentByLanguage(@RequestParam String keyword, @RequestParam String language, @RequestParam int page, @RequestParam int size, @RequestHeader("Authorization") String bearerToken) {
+        Pageable pageable = PageRequest.of(page, size);
         String token = extractToken(bearerToken);
-        return bibleContentService.searchContentByLanguage(keyword, language, token);
+        PagedResponse<BibleContent> searchResults = bibleContentService.searchContentByLanguage(keyword, language, token, pageable);
+        return ResponseEntity.ok(searchResults);
     }
+
     @GetMapping("unsubscribed/language")
-    public ResponseEntity<List<BibleContent>> getUnsubscribedContentByLanguage(
-            @RequestParam String language,
-            @RequestHeader("Authorization") String bearerToken) {
-
+    public ResponseEntity<PagedResponse<BibleContent>> getUnsubscribedContentByLanguage(@RequestParam String language, @RequestParam int page, @RequestParam int size, @RequestHeader("Authorization") String bearerToken) {
+        Pageable pageable = PageRequest.of(page, size);
         String token = extractToken(bearerToken);
-        List<BibleContent> unsubscribedContent = bibleContentService.getUnsubscribedContentByLanguage(language, token);
-
+        PagedResponse<BibleContent> unsubscribedContent = bibleContentService.getUnsubscribedContentByLanguage(language, token, pageable);
         return ResponseEntity.ok(unsubscribedContent);
     }
-
 }

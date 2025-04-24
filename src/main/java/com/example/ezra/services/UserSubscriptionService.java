@@ -8,6 +8,8 @@ import com.example.ezra.repositories.BibleContentRepository;
 import com.example.ezra.repositories.UserRepository;
 import com.example.ezra.repositories.UserSubscriptionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -47,12 +49,13 @@ public class UserSubscriptionService {
         Long chapterGroup = selectedChapter.getChapterGroup();
 
         System.out.println("Chapter Group: " + chapterGroup);
+        Pageable pageable = PageRequest.of(0, 10);
   BibleContent matchingContent = bibleContentRepository
                 .findFirstByChapterGroupAndLanguageAndType(chapterGroup, language.toLowerCase(), "Chapter") // Ensure lowercase matching
                 .orElseThrow(() -> new RuntimeException("No content found for the given language and type"));
 
         System.out.println("Matching Content Found: " + matchingContent.getId());
-  List<BibleContent> chaptersInGroup = bibleContentRepository.findByChapterGroup(chapterGroup);
+  List<BibleContent> chaptersInGroup = bibleContentRepository.findByChapterGroup(chapterGroup,pageable).getContent();
         System.out.println("Chapters in Group: " + chaptersInGroup.size());
 
         List<UserSubscription> newSubscriptions = chaptersInGroup.stream()

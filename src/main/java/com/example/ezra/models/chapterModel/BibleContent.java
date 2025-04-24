@@ -16,9 +16,9 @@ public class BibleContent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long parentId;  // Links to another BibleContent (Verse -> Chapter)
+    private Long parentId;
     private Long chapterGroup;
-    private String type; // e.g., chapter, verse, statement, question, etc.
+    private String type;
 
     @Column(columnDefinition = "TEXT")
     private String content;
@@ -26,13 +26,13 @@ public class BibleContent {
     @Column(columnDefinition = "TEXT")
     private String language;
 
-    @JdbcTypeCode(SqlTypes.JSON)  // ✅ Correct way for Hibernate 6+ with PostgreSQL JSONB
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> metadata;
 
     @Column(precision = 10, scale = 2)
-    private BigDecimal price; // Price field
+    private BigDecimal price;
 
     @Transient
-    private List<BibleContent> children; // Used for nested data
+    private List<BibleContent> children;
 }

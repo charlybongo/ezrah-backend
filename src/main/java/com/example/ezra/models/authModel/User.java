@@ -4,10 +4,13 @@ import com.example.ezra.enums.Roles;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -40,10 +43,14 @@ public class User implements UserDetails {
     @Column(name = "country")
     private String country;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> more_info;
+
     @Column(name = "house_no")
     private String houseNo;
 
-    @Column(nullable = false) // ✅ Ensure password is not nullable
+    @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -51,7 +58,7 @@ public class User implements UserDetails {
     private Roles role;
 
     @Override
-    @JsonIgnore // ✅ Prevents serialization issues
+    @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return role != null ? role.getAuthorities() : Collections.emptyList();
     }

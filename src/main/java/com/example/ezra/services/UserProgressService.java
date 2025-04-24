@@ -8,6 +8,8 @@ import com.example.ezra.repositories.BibleContentRepository;
 import com.example.ezra.repositories.UserProgressRepository;
 import com.example.ezra.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,7 +26,6 @@ public class UserProgressService {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // ✅ Mark a verse as read and update progress
     public UserProgress markVerseAsRead(UUID userId, Long verseId, int pagesCovered, String token) {
         String email = jwtUtil.extractEmail(token);
 
@@ -50,14 +51,12 @@ public class UserProgressService {
             progress = new UserProgress(user, verse, 0, chapter);
         }
 
-        // ✅ Ensure progress only sets the passed value, not accumulates it
         progress.setProgress(pagesCovered);
 
         return progressRepository.save(progress);
     }
 
 
-    // ✅ Fetch user progress by verse ID
     public List<UserProgress> getUserProgress(Long verseId, String token) {
         String email = jwtUtil.extractEmail(token);
 
@@ -71,7 +70,6 @@ public class UserProgressService {
         return progressRepository.findByVerseId(verseId);
     }
 
-    // ✅ Fetch user progress by user ID
     public List<UserProgress> getUserProgressByUserId(UUID userId, String token) {
         String email = jwtUtil.extractEmail(token);
 
@@ -85,7 +83,6 @@ public class UserProgressService {
         return progressRepository.findByUserId(userId);
     }
 
-    // ✅ Fetch progress for all verses in a chapter
     public List<UserProgress> getProgressByChapter(Long chapterId, String token) {
         String email = jwtUtil.extractEmail(token);
 
@@ -95,8 +92,8 @@ public class UserProgressService {
         if (!jwtUtil.validateToken(token, user)) {
             throw new RuntimeException("Invalid or expired token");
         }
-
-        List<BibleContent> versesInChapter = bibleContentRepository.findByParentId(chapterId);
+        Pageable pageable = PageRequest.of(0, 10);
+        List<BibleContent> versesInChapter =  bibleContentRepository.findByParentId(chapterId,pageable).getContent();
 
         return versesInChapter.stream()
                 .flatMap(verse -> progressRepository.findByVerseId(verse.getId()).stream())
