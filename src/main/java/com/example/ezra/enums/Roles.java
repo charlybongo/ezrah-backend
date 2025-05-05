@@ -1,18 +1,24 @@
 package com.example.ezra.enums;
 
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.List;
 
-public enum Roles implements GrantedAuthority {
-    ADMIN,
-    CUSTOMER;
+@Getter
+public enum Roles {
+    ADMIN(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"),
+            new SimpleGrantedAuthority("ADMIN_PRIVILEGE"))),
+    CUSTOMER(List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
 
-    @Override
-    public String getAuthority() {
-        return name();  // ✅ Returns "ADMIN", "MEMBER", etc.
+    private final List<GrantedAuthority> authorities;
+
+    Roles(List<GrantedAuthority> authorities) {
+        this.authorities = authorities;
     }
 
-    public List<GrantedAuthority> getAuthorities() {
-        return List.of(this);  // ✅ Returns itself as a single authority
+    // Helper method if you need the simple role name
+    public String getRoleName() {
+        return "ROLE_" + name();
     }
 }

@@ -66,7 +66,7 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-                        .requestMatchers("/auth/register", "/auth/login").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login","/auth/update/**","/auth/logout").permitAll()
                         .requestMatchers("/bible-content/**", "/progress/**", "/subscription/**")
                         .permitAll()// ✅ Require authentication
                         .anyRequest().authenticated()
