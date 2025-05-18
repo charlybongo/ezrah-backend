@@ -92,7 +92,7 @@ public class BibleContentService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         jwtUtil.validateToken(token,user);
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 50);
         Optional<BibleContent> content = bibleContentRepository.findById(id);
         return content.map(c -> loadSubContents(c, pageable));
     }
