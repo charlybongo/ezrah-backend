@@ -46,10 +46,10 @@ public class UserSubscriptionService {
         BibleContent selectedChapter = bibleContentRepository.findById(chapterId)
                 .orElseThrow(() -> new RuntimeException("Chapter not found"));
 
-        Long chapterGroup = selectedChapter.getId();
+        Long chapterGroup = selectedChapter.getChapterGroup();
 
         System.out.println("Chapter Group: " + chapterGroup);
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 50);
   BibleContent matchingContent = bibleContentRepository
                 .findFirstByChapterGroupAndLanguageAndType(chapterId, language.toLowerCase(), "Chapter") // Ensure lowercase matching
                 .orElseThrow(() -> new RuntimeException("No content found for the given language and type"));
