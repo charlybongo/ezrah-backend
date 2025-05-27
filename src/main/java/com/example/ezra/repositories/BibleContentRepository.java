@@ -24,8 +24,8 @@ public interface BibleContentRepository extends JpaRepository<BibleContent, Long
 
     Page<BibleContent> findByLanguage(String language, Pageable pageable);
 
-    @Query("SELECT bc FROM BibleContent bc WHERE bc.chapterGroup = :chapterGroup AND bc.language = :language AND bc.type = :type ORDER BY bc.id ASC")
-    List<BibleContent>  findFirstByChapterGroupAndLanguageAndType(@Param("chapterGroup") Long chapterGroup,
+    @Query("SELECT bc FROM BibleContent bc WHERE bc.id = :id AND bc.language = :language AND bc.type = :type ORDER BY bc.id ASC")
+    Optional<BibleContent> findFirstByChapterGroupAndLanguageAndType(@Param("id") Long id,
                                                                      @Param("language") String language,
                                                                      @Param("type") String type);
 
