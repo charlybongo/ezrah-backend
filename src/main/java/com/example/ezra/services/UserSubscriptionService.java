@@ -45,25 +45,22 @@ public class UserSubscriptionService {
 
         BibleContent selectedChapter = bibleContentRepository.findById(chapterId)
                 .orElseThrow(() -> new RuntimeException("Chapter not found"));
-
         Long chapterGroup = selectedChapter.getChapterGroup();
-
-        System.out.println("Chapter Group: " + chapterGroup);
         Pageable pageable = PageRequest.of(0, 10);
-  BibleContent matchingContent = bibleContentRepository
-                .findFirstByChapterGroupAndLanguageAndType(chapterGroup, language.toLowerCase(), "Chapter") // Ensure lowercase matching
-                .orElseThrow(() -> new RuntimeException("No content found for the given language and type"));
+        List<BibleContent> matchingContents = bibleContentRepository
+                .findFirstByChapterGroupAndLanguageAndType(chapterGroup, language.toLowerCase(), "Chapter");
 
-        System.out.println("Matching Content Found: " + matchingContent.getId());
-  List<BibleContent> chaptersInGroup = bibleContentRepository.findByChapterGroup(chapterGroup,pageable).getContent();
-        System.out.println("Chapters in Group: " + chaptersInGroup.size());
+        if (matchingContents.isEmpty()) {
+            throw new RuntimeException("No content found for the given language and type");
+        }
+
+        BibleContent matchingContent = matchingContents.get(0);
+        List<BibleContent> chaptersInGroup = bibleContentRepository.findByChapterGroup(chapterGroup, pageable).getContent();
 
         List<UserSubscription> newSubscriptions = chaptersInGroup.stream()
-                .filter(chapter -> !subscriptionRepository.existsByUserIdAndChapterId(userId, chapter.getId())) // Avoid duplicates
+                .filter(chapter -> !subscriptionRepository.existsByUserIdAndChapterId(userId, chapter.getId()))
                 .map(chapter -> new UserSubscription(user, chapter, chapterGroup))
                 .toList();
-
-        System.out.println("New Subscriptions Count: " + newSubscriptions.size());
 
         subscriptionRepository.saveAll(newSubscriptions);
 

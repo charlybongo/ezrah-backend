@@ -30,20 +30,26 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     public ResponseEntity<Map<String, String>> register(User user) {
-        userRepository.findByEmail(user.getEmail())
+        String normalisedEmail = user.getEmail().toLowerCase();
+
+        userRepository.findByEmail(normalisedEmail)
                 .ifPresent(existingUser -> {
                     throw new IllegalStateException("Email already exists!");
                 });
+
         String hashedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashedPassword);
         user.setRole(Roles.CUSTOMER);
+        user.setEmail(normalisedEmail);
 
         userRepository.save(user);
+
         Map<String, String> response = new HashMap<>();
         response.put("message", "User registered successfully!");
 
         return ResponseEntity.ok(response);
     }
+
 
     public LoginResponse login(String email, String password) {
         System.out.println("🔹 Attempting to authenticate user: " + email);
