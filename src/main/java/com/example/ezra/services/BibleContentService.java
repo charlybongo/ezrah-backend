@@ -106,6 +106,7 @@ public class BibleContentService {
         return bibleContentRepository.findById(id)
                 .map(existingContent -> {
                     existingContent.setType(updatedContent.getType());
+                    existingContent.setChapterGroup(updatedContent.getChapterGroup());
                     existingContent.setContent(updatedContent.getContent());
                     existingContent.setMetadata(updatedContent.getMetadata());
                     return bibleContentRepository.save(existingContent);
