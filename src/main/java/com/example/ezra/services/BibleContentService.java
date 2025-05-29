@@ -214,5 +214,23 @@ public class BibleContentService {
         }
         return bibleContentRepository.saveAll(existingContents);
     }
+    @Transactional
+    public void deleteContentAndAllChildren(Long id, String token) {
+        String email = jwtUtil.extractUsername(token);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        jwtUtil.validateToken(token, user);
+        deleteChildrenRecursively(id);
+        bibleContentRepository.deleteById(id);
+    }
+
+    private void deleteChildrenRecursively(Long parentId) {
+        List<BibleContent> children = bibleContentRepository.findByParentId(parentId);
+        for (BibleContent child : children) {
+            deleteChildrenRecursively(child.getId()); // Recursively delete subchildren
+            bibleContentRepository.deleteById(child.getId());
+        }
+    }
 
 }

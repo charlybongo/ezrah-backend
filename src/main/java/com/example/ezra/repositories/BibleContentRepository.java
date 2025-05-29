@@ -16,6 +16,8 @@ public interface BibleContentRepository extends JpaRepository<BibleContent, Long
     Page<BibleContent> findAllRootContent(Pageable pageable);
 
     Page<BibleContent> findByParentId(Long parentId, Pageable pageable);
+    List<BibleContent> findByParentId(Long parentId);
+
 
     @Query("SELECT bc FROM BibleContent bc WHERE (bc.parentId IS NULL OR bc.parentId = :parentId) AND bc.language = :language")
     Page<BibleContent> findByParentIdAndLanguage(@Param("parentId") Long parentId, @Param("language") String language, Pageable pageable);

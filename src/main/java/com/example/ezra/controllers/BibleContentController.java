@@ -81,6 +81,18 @@ public class BibleContentController {
         }
         return ResponseEntity.ok(chapters);
     }
+    @DeleteMapping("/{id}/cascade")
+    public ResponseEntity<Void> deleteContentTree(
+            @RequestHeader("Authorization") String bearerToken,
+            @PathVariable Long id) {
+        try {
+            String token = extractToken(bearerToken);
+            bibleContentService.deleteContentAndAllChildren(id, token);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     @GetMapping("/{id}/full")
     public ResponseEntity<BibleContent> getContentWithSubContents(@RequestHeader("Authorization") String bearerToken, @PathVariable Long id) {
