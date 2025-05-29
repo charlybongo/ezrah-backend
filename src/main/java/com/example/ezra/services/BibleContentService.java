@@ -4,7 +4,10 @@ import com.example.ezra.helpers.JwtUtil;
 import com.example.ezra.helpers.PagedResponse;
 import com.example.ezra.models.authModel.User;
 import com.example.ezra.models.chapterModel.BibleContent;
+import com.example.ezra.models.userProgress.UserProgress;
+import com.example.ezra.models.userSubscription.UserSubscription;
 import com.example.ezra.repositories.BibleContentRepository;
+import com.example.ezra.repositories.UserProgressRepository;
 import com.example.ezra.repositories.UserRepository;
 import com.example.ezra.repositories.UserSubscriptionRepository;
 import jakarta.transaction.Transactional;
@@ -14,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,6 +32,8 @@ public class BibleContentService {
     @Autowired
     private UserSubscriptionRepository userSubscriptionRepository;
 
+    @Autowired
+    private UserProgressRepository userProgressRepository;
     @Autowired
     private JwtUtil jwtUtil;
 
@@ -222,6 +228,11 @@ public class BibleContentService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         jwtUtil.validateToken(token, user);
+        List<UserProgress>  progerssDelete= userProgressRepository.findByChapterId(id);
+        userProgressRepository.deleteAll(progerssDelete);
+
+        List<UserSubscription>  subscriptionDelete= userSubscriptionRepository.findByChapterId(id);
+        userSubscriptionRepository.deleteAll(subscriptionDelete);
         deleteChildrenRecursively(id);
         bibleContentRepository.deleteById(id);
     }
@@ -232,6 +243,16 @@ public class BibleContentService {
             deleteChildrenRecursively(child.getId()); // Recursively delete subchildren
             bibleContentRepository.deleteById(child.getId());
         }
+    }
+
+    private List<Long> collectAllChapterIds(Long parentId) {
+        List<Long> ids = new ArrayList<>();
+        ids.add(parentId);
+        List<BibleContent> children = bibleContentRepository.findByParentId(parentId);
+        for (BibleContent child : children) {
+            ids.addAll(collectAllChapterIds(child.getId()));  // Recursive
+        }
+        return ids;
     }
 
 }
