@@ -1,5 +1,6 @@
 package com.example.ezra.models.chapterModel;
 
+import com.example.ezra.models.book.BookModel;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -12,6 +13,7 @@ import java.util.Map;
 @Entity
 @Data
 public class BibleContent {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,4 +37,9 @@ public class BibleContent {
 
     @Transient
     private List<BibleContent> children;
+
+    // ✅ Add book reference
+    @ManyToOne
+    @JoinColumn(name = "book_id", nullable = false)
+    private BookModel book;
 }

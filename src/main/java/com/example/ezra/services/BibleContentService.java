@@ -250,7 +250,7 @@ public class BibleContentService {
         ids.add(parentId);
         List<BibleContent> children = bibleContentRepository.findByParentId(parentId);
         for (BibleContent child : children) {
-            ids.addAll(collectAllChapterIds(child.getId()));  // Recursive
+            ids.addAll(collectAllChapterIds(child.getId()));
         }
         return ids;
     }
