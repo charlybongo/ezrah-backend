@@ -31,6 +31,9 @@ public class UserProgressService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        List<BibleContent> allVerses = bibleContentRepository.findAll();
+        System.out.println("Fetched " + allVerses.size() + " entries");
+        allVerses.forEach(v -> System.out.println("Verse ID: " + v.getId()));
 
         BibleContent verse = bibleContentRepository.findById(verseId)
                 .orElseThrow(() -> new RuntimeException("Verse not found"));
