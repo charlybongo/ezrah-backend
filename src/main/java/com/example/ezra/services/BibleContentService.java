@@ -4,12 +4,10 @@ import com.example.ezra.helpers.JwtUtil;
 import com.example.ezra.helpers.PagedResponse;
 import com.example.ezra.models.authModel.User;
 import com.example.ezra.models.chapterModel.BibleContent;
+import com.example.ezra.models.imageModel.Image;
 import com.example.ezra.models.userProgress.UserProgress;
 import com.example.ezra.models.userSubscription.UserSubscription;
-import com.example.ezra.repositories.BibleContentRepository;
-import com.example.ezra.repositories.UserProgressRepository;
-import com.example.ezra.repositories.UserRepository;
-import com.example.ezra.repositories.UserSubscriptionRepository;
+import com.example.ezra.repositories.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,6 +29,8 @@ public class BibleContentService {
     private UserRepository userRepository;
     @Autowired
     private UserSubscriptionRepository userSubscriptionRepository;
+    @Autowired
+    private ImageRepository imageRepository;
 
     @Autowired
     private UserProgressRepository userProgressRepository;
@@ -42,6 +42,7 @@ public class BibleContentService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         jwtUtil.validateToken(token, user);
+
         if (parentId != null && parentId != 0) {
             Optional<BibleContent> parent = bibleContentRepository.findById(parentId);
             if (parent.isEmpty()) {
@@ -52,14 +53,23 @@ public class BibleContentService {
             content.setParentId(null);
         }
 
+        // Save the image first if present
+        if (content.getImage() != null && content.getImage().getId() == null) {
+            Image savedImage = imageRepository.save(content.getImage());
+            content.setImage(savedImage);
+        }
+
         BibleContent savedContent = bibleContentRepository.save(content);
+
         if (content.getChildren() != null) {
             for (BibleContent child : content.getChildren()) {
                 saveContent(child, savedContent.getId(), token);
             }
         }
+
         return savedContent;
     }
+
     public PagedResponse<BibleContent> getRootContent(String token, Pageable pageable) {
         String email = jwtUtil.extractUsername(token);
 

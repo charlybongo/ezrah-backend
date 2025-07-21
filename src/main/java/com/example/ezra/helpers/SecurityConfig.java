@@ -67,7 +67,7 @@ public class SecurityConfig {
                                 "/webjars/**"
                         ).permitAll()
                         .requestMatchers("/auth/register", "/auth/login","/auth/update/**","/auth/logout").permitAll()
-                        .requestMatchers("/bible-content/**", "/progress/**", "/subscription/**","/books/**")
+                        .requestMatchers("/bible-content/**", "/progress/**", "/subscription/**","/books/**", "/images/**")
                         .permitAll()// ✅ Require authentication
                         .anyRequest().authenticated()
                 )

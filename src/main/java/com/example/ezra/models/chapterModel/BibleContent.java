@@ -1,6 +1,7 @@
 package com.example.ezra.models.chapterModel;
 
 import com.example.ezra.models.book.BookModel;
+import com.example.ezra.models.imageModel.Image;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -42,4 +43,8 @@ public class BibleContent {
     @ManyToOne
     @JoinColumn(name = "book_id", nullable = false)
     private BookModel book;
+
+    @ManyToOne
+    @JoinColumn(name = "image_id")
+    private Image image;
 }

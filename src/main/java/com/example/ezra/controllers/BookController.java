@@ -27,16 +27,30 @@ public class BookController {
             @PathVariable Long id) {
 
         String token = extractToken(bearerToken);
-        // Optional: use `token` to verify access or log requests
         return bookService.getBookNameById(id);
     }
 
     @GetMapping
     public List<BookModel> getAllBooks(
             @RequestHeader("Authorization") String bearerToken) {
-
         String token = extractToken(bearerToken);
-        // Optional: validate token if needed
-        return bookService.getAllBooks();
+        return bookService.getAllBooks(token);
     }
+
+@PostMapping
+    public BookModel addBook(
+        @RequestHeader("Authorization") String bearerToken, @RequestBody BookModel bookModel
+){
+        String token = extractToken(bearerToken);
+        return bookService.addBook(bookModel, token);
+}
+
+    @DeleteMapping("/{id}")
+    public void deleteBook(
+            @RequestHeader("Authorization") String bearerToken,
+            @PathVariable Long id) {
+        String token = extractToken(bearerToken);
+        bookService.deleteBookById(id, token);
+    }
+
 }
