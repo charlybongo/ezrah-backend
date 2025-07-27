@@ -40,11 +40,12 @@ public class BibleContent {
     private List<BibleContent> children;
 
     // ✅ Add book reference
-    @ManyToOne
-    @JoinColumn(name = "book_id", nullable = false)
+    @ManyToOne(optional = true) // allow null
+    @JoinColumn(name = "book_id", nullable = true)
     private BookModel book;
 
-    @ManyToOne
-    @JoinColumn(name = "image_id")
+
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "image_id", nullable = true)
     private Image image;
 }
