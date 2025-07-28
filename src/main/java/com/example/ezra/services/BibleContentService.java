@@ -189,6 +189,21 @@ public class BibleContentService {
         Optional<BibleContent> content = bibleContentRepository.findByIdAndLanguage(id, language);
         return content.map(c -> loadSubContents(c, pageable));
     }
+    public List<BibleContent> getByChapterGroupAndLanguage(Long chapterGroup, String language, String token) {
+        String email = jwtUtil.extractUsername(token);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        jwtUtil.validateToken(token, user);
+
+        List<BibleContent> roots = bibleContentRepository.findByChapterGroupAndLanguage(chapterGroup, language);
+        Pageable pageable = PageRequest.of(0, 50);
+        return roots.stream()
+                .map(root -> loadSubContents(root,pageable)) // include children recursively
+                .collect(Collectors.toList());
+    }
+
+
+
     public PagedResponse<BibleContent> getUnsubscribedContentByLanguage(String language, String token, Pageable pageable) {
         String email = jwtUtil.extractUsername(token);
         User user = userRepository.findByEmail(email)

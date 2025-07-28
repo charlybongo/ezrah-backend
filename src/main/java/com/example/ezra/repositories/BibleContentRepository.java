@@ -32,6 +32,7 @@ public interface BibleContentRepository extends JpaRepository<BibleContent, Long
                                                                      @Param("type") String type);
 
     Page<BibleContent> findByChapterGroup(Long chapterGroup, Pageable pageable);
+    List<BibleContent> findByChapterGroupAndLanguage(Long chapterGroup, String language);
 
     @Query("SELECT bc FROM BibleContent bc WHERE bc.language = :language AND bc.id NOT IN :subscribedChapterIds")
     Page<BibleContent> findUnsubscribedContentByLanguage(@Param("language") String language, @Param("subscribedChapterIds") List<Long> subscribedChapterIds, Pageable pageable);

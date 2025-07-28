@@ -148,4 +148,17 @@ public class BibleContentController {
         PagedResponse<BibleContent> unsubscribedContent = bibleContentService.getUnsubscribedContentByLanguage(language, token, pageable);
         return ResponseEntity.ok(unsubscribedContent);
     }
+
+    @GetMapping("/group")
+    public ResponseEntity<List<BibleContent>> getByChapterGroupAndLanguage(
+            @RequestParam Long groupId,
+            @RequestParam String language,
+            @RequestHeader("Authorization") String bearerToken
+    ) {
+        String token = extractToken(bearerToken);
+        List<BibleContent> response = bibleContentService.getByChapterGroupAndLanguage(groupId, language, token);
+        return ResponseEntity.ok(response);
+    }
+
+
 }
