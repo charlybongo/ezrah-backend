@@ -123,6 +123,11 @@ public class BibleContentService {
                 .map(existingContent -> {
                     existingContent.setType(updatedContent.getType());
                     existingContent.setChapterGroup(updatedContent.getChapterGroup());
+                    existingContent.setBook(updatedContent.getBook());
+                    if (updatedContent.getImage() != null && updatedContent.getImage().getId() == null) {
+                        Image savedImage = imageRepository.save(updatedContent.getImage());
+                        updatedContent.setImage(savedImage);
+                    }
                     existingContent.setContent(updatedContent.getContent());
                     existingContent.setMetadata(updatedContent.getMetadata());
                     return bibleContentRepository.save(existingContent);
