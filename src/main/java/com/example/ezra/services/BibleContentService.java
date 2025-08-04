@@ -124,10 +124,23 @@ public class BibleContentService {
                     existingContent.setType(updatedContent.getType());
                     existingContent.setChapterGroup(updatedContent.getChapterGroup());
                     existingContent.setBook(updatedContent.getBook());
-                    if (updatedContent.getImage() != null && updatedContent.getImage().getId() == null) {
-                        Image savedImage = imageRepository.save(updatedContent.getImage());
-                        updatedContent.setImage(savedImage);
+
+                    // Handle image updates
+                    if (updatedContent.getImage() == null) {
+                        // Remove existing image if frontend sends null
+                        existingContent.setImage(null);
+                    } else {
+                        Image imageToSet = updatedContent.getImage();
+
+                        // If image ID is null or does not exist, save as a new image
+                        if (imageToSet.getId() == null || !imageRepository.existsById(imageToSet.getId())) {
+                            imageToSet.setId(null); // Ensure JPA generates a new ID
+                            imageToSet = imageRepository.save(imageToSet);
+                        }
+
+                        existingContent.setImage(imageToSet);
                     }
+
                     existingContent.setContent(updatedContent.getContent());
                     existingContent.setMetadata(updatedContent.getMetadata());
                     return bibleContentRepository.save(existingContent);
