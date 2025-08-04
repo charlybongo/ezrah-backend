@@ -242,17 +242,22 @@ public class BibleContentService {
     }
 
     @Transactional
-    public List<BibleContent> updateMultipleContents(List<BibleContent> updates, String token) {
+    public List<BibleContent> updateMultipleContents(List<BibleContent> updates, List<Long> deleteIds, String token) {
         String email = jwtUtil.extractUsername(token);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         jwtUtil.validateToken(token, user);
-        List<Long> ids = updates.stream().map(BibleContent::getId).toList();
-        List<BibleContent> existingContents = bibleContentRepository.findAllById(ids);
 
-        if (existingContents.isEmpty()) {
+        List<Long> ids = updates == null ? List.of() : updates.stream()
+                .map(BibleContent::getId)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        List<BibleContent> existingContents = ids.isEmpty() ? List.of() : bibleContentRepository.findAllById(ids);
+
+        if (!ids.isEmpty() && existingContents.isEmpty()) {
             throw new RuntimeException("No valid content found for the provided IDs");
         }
+
         for (BibleContent existing : existingContents) {
             for (BibleContent update : updates) {
                 if (existing.getId().equals(update.getId())) {
@@ -262,7 +267,16 @@ public class BibleContentService {
                 }
             }
         }
-        return bibleContentRepository.saveAll(existingContents);
+
+        List<BibleContent> saved = existingContents.isEmpty() ? List.of() : bibleContentRepository.saveAll(existingContents);
+
+        if (deleteIds != null && !deleteIds.isEmpty()) {
+            for (Long id : deleteIds) {
+                deleteContentAndAllChildren(id, token);
+            }
+        }
+
+        return saved;
     }
     @Transactional
     public void deleteContentAndAllChildren(Long id, String token) {

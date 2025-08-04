@@ -2,6 +2,7 @@ package com.example.ezra.controllers;
 
 import com.example.ezra.helpers.PagedResponse;
 import com.example.ezra.models.chapterModel.BibleContent;
+import com.example.ezra.dtos.BulkContentUpdateRequest;
 import com.example.ezra.services.BibleContentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -45,9 +46,10 @@ public class BibleContentController {
     }
 
     @PutMapping("/bulk-update")
-    public ResponseEntity<List<BibleContent>> updateMultipleContents(@RequestBody List<BibleContent> updates, @RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<List<BibleContent>> updateMultipleContents(@RequestBody BulkContentUpdateRequest request,
+                                                                    @RequestHeader("Authorization") String bearerToken) {
         String token = extractToken(bearerToken);
-        List<BibleContent> updatedContents = bibleContentService.updateMultipleContents(updates, token);
+        List<BibleContent> updatedContents = bibleContentService.updateMultipleContents(request.getUpdates(), request.getDeleteIds(), token);
         return ResponseEntity.ok(updatedContents);
     }
 
