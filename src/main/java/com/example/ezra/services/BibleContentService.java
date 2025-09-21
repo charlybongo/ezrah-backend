@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class BibleContentService {
@@ -59,6 +61,9 @@ public class BibleContentService {
             content.setImage(savedImage);
         }
 
+        // Ensure metadata.format present (html/markdown/text)
+        normalizeContentFormat(content);
+
         BibleContent savedContent = bibleContentRepository.save(content);
 
         if (content.getChildren() != null) {
@@ -68,6 +73,20 @@ public class BibleContentService {
         }
 
         return savedContent;
+    }
+
+    private void normalizeContentFormat(BibleContent content) {
+        Map<String, Object> meta = content.getMetadata();
+        if (meta == null) {
+            meta = new HashMap<>();
+            content.setMetadata(meta);
+        }
+        Object fmt = meta.get("format");
+        if (fmt == null || !(fmt instanceof String) || ((String) fmt).isBlank()) {
+            String body = content.getContent();
+            String inferred = (body != null && body.matches("(?s).*<[^>]+>.*")) ? "html" : "text";
+            meta.put("format", inferred);
+        }
     }
 
     public PagedResponse<BibleContent> getRootContent(String token, Pageable pageable) {
@@ -80,6 +99,8 @@ public class BibleContentService {
         Page<BibleContent> pageResult = bibleContentRepository.findByParentId(null, pageable);
         return new PagedResponse<>(pageResult);
     }
+
+
     public PagedResponse<BibleContent> getAllChaptersWithSubContents(String token, Pageable pageable) {
         String email = jwtUtil.extractUsername(token);
 
@@ -143,6 +164,7 @@ public class BibleContentService {
 
                     existingContent.setContent(updatedContent.getContent());
                     existingContent.setMetadata(updatedContent.getMetadata());
+                    normalizeContentFormat(existingContent);
                     return bibleContentRepository.save(existingContent);
                 }).orElseThrow(() -> new RuntimeException("Content not found"));
     }
@@ -264,6 +286,7 @@ public class BibleContentService {
                     existing.setType(update.getType());
                     existing.setContent(update.getContent());
                     existing.setMetadata(update.getMetadata());
+                    normalizeContentFormat(existing);
                 }
             }
         }

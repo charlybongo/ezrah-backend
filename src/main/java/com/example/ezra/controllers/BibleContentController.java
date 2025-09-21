@@ -34,6 +34,7 @@ public class BibleContentController {
         return ResponseEntity.ok(savedContent);
     }
 
+
     @PutMapping("/{id}")
     public ResponseEntity<BibleContent> updateContent(@RequestHeader("Authorization") String bearerToken, @PathVariable Long id, @RequestBody BibleContent updatedContent) {
         try {
